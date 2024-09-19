@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require("express");
+const jwt =require('jsonwebtoken')
 const cors = require("cors");
 const app = express();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -30,10 +31,48 @@ async function run() {
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         const menuCollection = client.db("dream-foods").collection("menu");
+        const userCollection = client.db("dream-foods").collection("users");
         const cartCollection = client.db("dream-foods").collection("cart");
         const reviewCollection = client.db("dream-foods").collection("reviews");
         const orderAddressCollection = client.db("dream-foods").collection("orderAddress");
         const paymentCollection = client.db("dream-foods").collection("payments");
+
+
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+            res.send({ token });
+          })
+
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            
+            const query = { email: user.email }
+            const existingUser = await userCollection.findOne(query);
+            if (existingUser) {
+              return res.send({ message: 'user already exists', insertedId: null })
+            }
+            const result = await userCollection.insertOne(user);
+            res.send(result);
+          });
+
+        app.get('/users', async(req,res)=>{
+            const result = await userCollection.find().toArray();
+            res.send(result)
+        })
+
+        app.patch('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+              $set: {
+                role: 'admin'
+              }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+          })
 
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();
