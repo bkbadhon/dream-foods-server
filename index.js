@@ -8,7 +8,7 @@ const Port = 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const corsOptions = {
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'https://dream-foods-cbacc.web.app'],
     credentials: true,
 };
 
